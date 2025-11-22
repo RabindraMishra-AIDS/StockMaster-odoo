@@ -38,24 +38,26 @@ CREATE TABLE IF NOT EXISTS categories (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  color VARCHAR(7) DEFAULT '#3B82F6',
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for categories (open for all authenticated users)
-CREATE POLICY "Authenticated users can view categories" ON categories
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- RLS Policies for categories (user-specific access)
+CREATE POLICY "Users can view their own categories" ON categories
+  FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can create categories" ON categories
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can create their own categories" ON categories
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can update categories" ON categories
-  FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can update their own categories" ON categories
+  FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can delete categories" ON categories
-  FOR DELETE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can delete their own categories" ON categories
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================================
 -- 3. SUPPLIERS TABLE
@@ -66,24 +68,25 @@ CREATE TABLE IF NOT EXISTS suppliers (
   contact_email TEXT,
   contact_phone TEXT,
   address TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE suppliers ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for suppliers
-CREATE POLICY "Authenticated users can view suppliers" ON suppliers
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- RLS Policies for suppliers (user-specific access)
+CREATE POLICY "Users can view their own suppliers" ON suppliers
+  FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can create suppliers" ON suppliers
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can create their own suppliers" ON suppliers
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can update suppliers" ON suppliers
-  FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can update their own suppliers" ON suppliers
+  FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can delete suppliers" ON suppliers
-  FOR DELETE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can delete their own suppliers" ON suppliers
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================================
 -- 4. PRODUCTS TABLE
@@ -98,24 +101,25 @@ CREATE TABLE IF NOT EXISTS products (
   selling_price DECIMAL(10, 2),
   quantity INTEGER NOT NULL DEFAULT 0,
   reorder_level INTEGER,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for products
-CREATE POLICY "Authenticated users can view products" ON products
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- RLS Policies for products (user-specific access)
+CREATE POLICY "Users can view their own products" ON products
+  FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can create products" ON products
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can create their own products" ON products
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can update products" ON products
-  FOR UPDATE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can update their own products" ON products
+  FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can delete products" ON products
-  FOR DELETE USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can delete their own products" ON products
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================================
 -- 5. STOCK MOVEMENTS TABLE
@@ -126,17 +130,18 @@ CREATE TABLE IF NOT EXISTS stock_movements (
   type TEXT NOT NULL CHECK (type IN ('in', 'out')),
   quantity DECIMAL(10, 3) NOT NULL,
   notes TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for stock_movements
-CREATE POLICY "Authenticated users can view stock movements" ON stock_movements
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- RLS Policies for stock_movements (user-specific access)
+CREATE POLICY "Users can view their own stock movements" ON stock_movements
+  FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Authenticated users can create stock movements" ON stock_movements
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can create their own stock movements" ON stock_movements
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================================
 -- 6. ALERTS TABLE
