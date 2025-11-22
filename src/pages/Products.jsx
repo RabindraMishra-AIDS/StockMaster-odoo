@@ -23,14 +23,12 @@ export default function Products() {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
-    description: '',
     category_id: '',
     supplier_id: '',
-    unit_price: 0,
+    cost_price: 0,
+    selling_price: 0,
     quantity: 0,
-    min_stock_level: 10,
-    max_stock_level: 1000,
-    barcode: ''
+    reorder_level: 10
   })
 
   useEffect(() => {
@@ -39,8 +37,6 @@ export default function Products() {
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       // Fetch products with related data
       const { data: productsData, error: productsError } = await supabase
         .from('products')
@@ -49,7 +45,6 @@ export default function Products() {
           categories(id, name, color),
           suppliers(id, name)
         `)
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       
       if (productsError) throw productsError
@@ -59,14 +54,12 @@ export default function Products() {
       const { data: categoriesData } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
       setCategories(categoriesData || [])
 
       // Fetch suppliers
       const { data: suppliersData } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('user_id', user.id)
       setSuppliers(suppliersData || [])
 
     } catch (error) {
@@ -83,28 +76,24 @@ export default function Products() {
       setFormData({
         name: product.name,
         sku: product.sku,
-        description: product.description || '',
         category_id: product.category_id || '',
         supplier_id: product.supplier_id || '',
-        unit_price: product.unit_price,
+        cost_price: product.cost_price || 0,
+        selling_price: product.selling_price || 0,
         quantity: product.quantity,
-        min_stock_level: product.min_stock_level,
-        max_stock_level: product.max_stock_level,
-        barcode: product.barcode || ''
+        reorder_level: product.reorder_level || 10
       })
     } else {
       setEditingProduct(null)
       setFormData({
         name: '',
         sku: '',
-        description: '',
         category_id: '',
         supplier_id: '',
-        unit_price: 0,
+        cost_price: 0,
+        selling_price: 0,
         quantity: 0,
-        min_stock_level: 10,
-        max_stock_level: 1000,
-        barcode: ''
+        reorder_level: 10
       })
     }
     setModalOpen(true)
@@ -121,8 +110,6 @@ export default function Products() {
     setError('')
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       if (editingProduct) {
         // Update existing product
         const { error: updateError } = await supabase
@@ -132,7 +119,6 @@ export default function Products() {
             updated_at: new Date().toISOString()
           })
           .eq('id', editingProduct.id)
-          .eq('user_id', user.id)
         
         if (updateError) throw updateError
         setSuccess('Product updated successfully!')
@@ -140,10 +126,7 @@ export default function Products() {
         // Create new product
         const { error: insertError } = await supabase
           .from('products')
-          .insert([{
-            ...formData,
-            user_id: user.id
-          }])
+          .insert([formData])
         
         if (insertError) throw insertError
         setSuccess('Product created successfully!')
@@ -162,13 +145,10 @@ export default function Products() {
     if (!confirm('Are you sure you want to delete this product?')) return
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       const { error: deleteError } = await supabase
         .from('products')
         .delete()
         .eq('id', productId)
-        .eq('user_id', user.id)
       
       if (deleteError) throw deleteError
       
@@ -183,7 +163,7 @@ export default function Products() {
 
   const getStockStatus = (product) => {
     if (product.quantity === 0) return { variant: 'danger', text: 'Out of Stock' }
-    if (product.quantity <= product.min_stock_level) return { variant: 'warning', text: 'Low Stock' }
+    if (product.quantity <= product.reorder_level) return { variant: 'warning', text: 'Low Stock' }
     return { variant: 'success', text: 'In Stock' }
   }
 
@@ -262,8 +242,8 @@ export default function Products() {
                     </td>
                     <td>{product.suppliers?.name || '-'}</td>
                     <td className="font-bold">{product.quantity}</td>
-                    <td className="font-mono">${product.unit_price.toFixed(2)}</td>
-                    <td className="font-bold">${(product.quantity * product.unit_price).toFixed(2)}</td>
+                    <td className="font-mono">${product.selling_price?.toFixed(2) || '0.00'}</td>
+                    <td className="font-bold">${((product.quantity || 0) * (product.selling_price || 0)).toFixed(2)}</td>
                     <td>
                       <Badge variant={status.variant}>{status.text}</Badge>
                     </td>
@@ -324,12 +304,6 @@ export default function Products() {
             />
           </div>
 
-          <Input
-            label="Description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
-
           <div className="grid grid-cols-2 gap-4">
             <Select
               label="Category"
@@ -357,41 +331,38 @@ export default function Products() {
           <div className="grid grid-cols-2 gap-4">
             <Input
               type="number"
-              label="Unit Price"
-              value={formData.unit_price}
-              onChange={(e) => setFormData({ ...formData, unit_price: parseFloat(e.target.value) })}
+              label="Cost Price"
+              value={formData.cost_price}
+              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
               required
               step="0.01"
             />
             <Input
               type="number"
-              label="Quantity"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
+              label="Selling Price"
+              value={formData.selling_price}
+              onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
               required
+              step="0.01"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
               type="number"
-              label="Min Stock Level"
-              value={formData.min_stock_level}
-              onChange={(e) => setFormData({ ...formData, min_stock_level: parseInt(e.target.value) })}
+              label="Quantity"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+              required
             />
             <Input
               type="number"
-              label="Max Stock Level"
-              value={formData.max_stock_level}
-              onChange={(e) => setFormData({ ...formData, max_stock_level: parseInt(e.target.value) })}
+              label="Reorder Level"
+              value={formData.reorder_level}
+              onChange={(e) => setFormData({ ...formData, reorder_level: parseInt(e.target.value) || 0 })}
+              required
             />
           </div>
-
-          <Input
-            label="Barcode"
-            value={formData.barcode}
-            onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-          />
         </form>
       </Modal>
     </div>
