@@ -22,21 +22,18 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      // Fetch all products
+      // Fetch all products (shared data model - no user_id filter)
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select('*, categories(name)')
-        .eq('user_id', user.id)
       
       if (productsError) throw productsError
 
       // Calculate stats
       const totalProducts = products?.length || 0
-      const lowStock = products?.filter(p => p.quantity <= p.min_stock_level && p.quantity > 0).length || 0
+      const lowStock = products?.filter(p => p.quantity <= p.reorder_level && p.quantity > 0).length || 0
       const outOfStock = products?.filter(p => p.quantity === 0).length || 0
-      const totalValue = products?.reduce((sum, p) => sum + (p.quantity * p.unit_price), 0) || 0
+      const totalValue = products?.reduce((sum, p) => sum + (p.quantity * p.selling_price), 0) || 0
 
       setStats({ totalProducts, lowStock, outOfStock, totalValue })
       
@@ -52,7 +49,7 @@ export default function Dashboard() {
           categoryMap[categoryName] = { name: categoryName, count: 0, value: 0 }
         }
         categoryMap[categoryName].count += 1
-        categoryMap[categoryName].value += product.quantity * product.unit_price
+        categoryMap[categoryName].value += product.quantity * product.selling_price
       })
       setCategoryData(Object.values(categoryMap))
       
@@ -161,7 +158,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <p className="font-bold">Qty: {product.quantity}</p>
-                    <p className="text-sm text-gray-600">${product.unit_price}</p>
+                    <p className="text-sm text-gray-600">${product.selling_price?.toFixed(2) || '0.00'}</p>
                   </div>
                 </div>
               ))
