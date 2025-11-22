@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { Loading } from '../components/ui/Loading'
 import { Alert } from '../components/ui/Alert'
-import { Plus, Edit, Trash2, Mail, Phone, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Mail, Phone, MapPin, Search } from 'lucide-react'
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([])
@@ -15,6 +15,7 @@ export default function Suppliers() {
   const [editingSupplier, setEditingSupplier] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   
   const [formData, setFormData] = useState({
     name: '',
@@ -124,6 +125,14 @@ export default function Suppliers() {
 
   if (loading) return <Loading size="lg" />
 
+  // Filter suppliers based on search query
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    supplier.contact_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    supplier.contact_phone?.includes(searchQuery) ||
+    supplier.address?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -137,14 +146,30 @@ export default function Suppliers() {
       {error && <Alert variant="danger" onClose={() => setError('')}>{error}</Alert>}
       {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
 
+      {/* Search Bar */}
+      <Card className="bg-white">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            type="text"
+            placeholder="Search suppliers by name, email, phone, or address..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12"
+          />
+        </div>
+      </Card>
+
       {/* Suppliers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {suppliers.length === 0 ? (
+        {filteredSuppliers.length === 0 ? (
           <Card className="col-span-full bg-white">
-            <p className="text-center font-bold text-gray-500 py-8">No suppliers yet</p>
+            <p className="text-center font-bold text-gray-500 py-8">
+              {searchQuery ? 'No suppliers found matching your search' : 'No suppliers yet'}
+            </p>
           </Card>
         ) : (
-          suppliers.map((supplier) => (
+          filteredSuppliers.map((supplier) => (
             <Card key={supplier.id} className="bg-green-100">
               <h3 className="text-xl font-bold mb-4">{supplier.name}</h3>
               

@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input'
 import { Modal } from '../components/ui/Modal'
 import { Loading } from '../components/ui/Loading'
 import { Alert } from '../components/ui/Alert'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Search } from 'lucide-react'
 
 export default function Categories() {
   const [categories, setCategories] = useState([])
@@ -15,6 +15,7 @@ export default function Categories() {
   const [editingCategory, setEditingCategory] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   
   const [formData, setFormData] = useState({
     name: '',
@@ -124,6 +125,12 @@ export default function Categories() {
 
   if (loading) return <Loading size="lg" />
 
+  // Filter categories based on search query
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    category.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -137,14 +144,30 @@ export default function Categories() {
       {error && <Alert variant="danger" onClose={() => setError('')}>{error}</Alert>}
       {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
 
+      {/* Search Bar */}
+      <Card className="bg-white">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <Input
+            type="text"
+            placeholder="Search categories by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12"
+          />
+        </div>
+      </Card>
+
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <Card className="col-span-full bg-white">
-            <p className="text-center font-bold text-gray-500 py-8">No categories yet</p>
+            <p className="text-center font-bold text-gray-500 py-8">
+              {searchQuery ? 'No categories found matching your search' : 'No categories yet'}
+            </p>
           </Card>
         ) : (
-          categories.map((category) => (
+          filteredCategories.map((category) => (
             <Card key={category.id} className="bg-white">
               <div 
                 className="w-full h-3 mb-4 border-2 border-black"

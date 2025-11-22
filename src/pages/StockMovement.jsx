@@ -135,6 +135,10 @@ export default function StockMovement() {
 
   if (loading) return <Loading size="lg" />
 
+  // Separate movements by type
+  const stockInMovements = movements.filter(m => m.type === 'in')
+  const stockOutMovements = movements.filter(m => m.type === 'out')
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -148,50 +152,90 @@ export default function StockMovement() {
       {error && <Alert variant="danger" onClose={() => setError('')}>{error}</Alert>}
       {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
 
-      {/* Movements Timeline */}
-      <Card className="bg-white">
-        <h2 className="text-2xl font-bold mb-4 uppercase">Recent Movements</h2>
-        <div className="space-y-4">
-          {movements.length === 0 ? (
-            <p className="text-center font-bold text-gray-500 py-8">No stock movements yet</p>
-          ) : (
-            movements.map((movement) => (
-              <div 
-                key={movement.id}
-                className="flex items-start gap-4 p-4 border-2 border-black bg-gray-50"
-              >
-                <div className="p-3 bg-white border-2 border-black">
-                  {getMovementIcon(movement.type)}
-                </div>
-                
-                <div className="flex-1">
+      {/* Side-by-Side Stock In and Stock Out */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Stock In Section */}
+        <Card className="bg-green-50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-green-500 border-2 border-black">
+              <TrendingUp size={24} color="white" />
+            </div>
+            <h2 className="text-2xl font-bold uppercase">Stock In</h2>
+          </div>
+          
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            {stockInMovements.length === 0 ? (
+              <p className="text-center font-bold text-gray-500 py-8">No stock in movements yet</p>
+            ) : (
+              stockInMovements.map((movement) => (
+                <div 
+                  key={movement.id}
+                  className="p-3 border-2 border-black bg-white"
+                >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="font-bold text-lg">{movement.products?.name}</h3>
-                      <p className="text-sm text-gray-600">SKU: {movement.products?.sku}</p>
+                      <h3 className="font-bold">{movement.products?.name}</h3>
+                      <p className="text-xs text-gray-600">SKU: {movement.products?.sku}</p>
                     </div>
-                    {getMovementBadge(movement.type)}
+                    <Badge variant="success">+{movement.quantity}</Badge>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-bold">Quantity:</span> {movement.quantity}
-                    </div>
-                    <div>
-                      <span className="font-bold">Date:</span> {format(new Date(movement.created_at), 'MMM dd, yyyy HH:mm')}
-                    </div>
-                    {movement.notes && (
-                      <div className="col-span-2">
-                        <span className="font-bold">Notes:</span> {movement.notes}
-                      </div>
-                    )}
+                  <div className="text-xs text-gray-600 mb-1">
+                    <span className="font-bold">Date:</span> {format(new Date(movement.created_at), 'MMM dd, yyyy HH:mm')}
                   </div>
+                  
+                  {movement.notes && (
+                    <div className="text-xs text-gray-600">
+                      <span className="font-bold">Notes:</span> {movement.notes}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+              ))
+            )}
+          </div>
+        </Card>
+
+        {/* Stock Out Section */}
+        <Card className="bg-red-50">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-red-500 border-2 border-black">
+              <TrendingDown size={24} color="white" />
+            </div>
+            <h2 className="text-2xl font-bold uppercase">Stock Out</h2>
+          </div>
+          
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+            {stockOutMovements.length === 0 ? (
+              <p className="text-center font-bold text-gray-500 py-8">No stock out movements yet</p>
+            ) : (
+              stockOutMovements.map((movement) => (
+                <div 
+                  key={movement.id}
+                  className="p-3 border-2 border-black bg-white"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-bold">{movement.products?.name}</h3>
+                      <p className="text-xs text-gray-600">SKU: {movement.products?.sku}</p>
+                    </div>
+                    <Badge variant="danger">-{movement.quantity}</Badge>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 mb-1">
+                    <span className="font-bold">Date:</span> {format(new Date(movement.created_at), 'MMM dd, yyyy HH:mm')}
+                  </div>
+                  
+                  {movement.notes && (
+                    <div className="text-xs text-gray-600">
+                      <span className="font-bold">Notes:</span> {movement.notes}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
 
       {/* Stock Movement Modal */}
       <Modal
