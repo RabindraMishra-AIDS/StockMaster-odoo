@@ -30,12 +30,9 @@ export default function Suppliers() {
 
   const fetchSuppliers = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -82,24 +79,18 @@ export default function Suppliers() {
     setError('')
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       if (editingSupplier) {
         const { error: updateError } = await supabase
           .from('suppliers')
           .update(formData)
           .eq('id', editingSupplier.id)
-          .eq('user_id', user.id)
         
         if (updateError) throw updateError
         setSuccess('Supplier updated successfully!')
       } else {
         const { error: insertError } = await supabase
           .from('suppliers')
-          .insert([{
-            ...formData,
-            user_id: user.id
-          }])
+          .insert([formData])
         
         if (insertError) throw insertError
         setSuccess('Supplier created successfully!')
@@ -118,13 +109,10 @@ export default function Suppliers() {
     if (!confirm('Are you sure you want to delete this supplier?')) return
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       const { error: deleteError } = await supabase
         .from('suppliers')
         .delete()
         .eq('id', supplierId)
-        .eq('user_id', user.id)
       
       if (deleteError) throw deleteError
       

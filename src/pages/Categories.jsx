@@ -33,12 +33,9 @@ export default function Categories() {
 
   const fetchCategories = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -79,32 +76,24 @@ export default function Categories() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    
+
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       if (editingCategory) {
         const { error: updateError } = await supabase
           .from('categories')
           .update(formData)
           .eq('id', editingCategory.id)
-          .eq('user_id', user.id)
         
         if (updateError) throw updateError
         setSuccess('Category updated successfully!')
       } else {
         const { error: insertError } = await supabase
           .from('categories')
-          .insert([{
-            ...formData,
-            user_id: user.id
-          }])
+          .insert([formData])
         
         if (insertError) throw insertError
         setSuccess('Category created successfully!')
-      }
-      
-      handleCloseModal()
+      }      handleCloseModal()
       fetchCategories()
       setTimeout(() => setSuccess(''), 3000)
     } catch (error) {
@@ -117,13 +106,10 @@ export default function Categories() {
     if (!confirm('Are you sure you want to delete this category?')) return
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
       const { error: deleteError } = await supabase
         .from('categories')
         .delete()
         .eq('id', categoryId)
-        .eq('user_id', user.id)
       
       if (deleteError) throw deleteError
       
